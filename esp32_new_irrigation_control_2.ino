@@ -40,7 +40,7 @@ String valveStateStr;
 // set up Water Flow Sensor
 #define FLOWSENSOR  36
 Chrono waterFlow(Chrono::SECONDS); 
-float calibrationFactor = 7;
+float calibrationFactor = 7.1;
 volatile byte pulseCount;
 byte pulse1Sec = 0;
 float flowRate;
