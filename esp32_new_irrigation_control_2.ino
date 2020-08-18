@@ -26,12 +26,12 @@ int rssi;
 bool loraSent = false;
 
 // set up Relays
-int numValves = 4;
-int valve[] = {22,12,23,13};
-int enabledValves[] = {true,true,true,true};
-int irrigationLength[] = {120,120,120,60};
+int numValves = 6;
+int valve[] = {25,22,12,23,13,2};
+int enabledValves[] = {false,true,true,true,true,false};
+int irrigationLength[] = {120,120,120,120,60,120};
 
-int activeValve = 0;
+int activeValve = 6;
 bool irrigate = true;
 bool irrigateOld = false;
 int currentIrrigationLength = 0;
