@@ -56,7 +56,6 @@ void initDisplay();
 void displayMsg(String msg1, String msg2 = "", String msg3 = "", String msg4 = "");
 void IRAM_ATTR pulseCounter();
 void checkWaterFlow();
-void axdelay(int delaylength);
 void sendLoraMsg();
 
 
@@ -267,25 +266,6 @@ void checkWaterFlow(){
       Serial.println("flow:"+String(flowRate));
       previousFlowRate = flowRate;
   }
-}
-
-void axdelay(int delaylength){
-  long startMillis = millis();
-  /*
-  while (millis() < (startMillis + delaylength *1000)){
-    buttonDebouncer1.update();  
-    if(buttonDebouncer1.fell()){
-      Serial.println("button");
-      irrigate = !irrigate;
-      if(irrigate)Serial.println("irrigate should now be on");
-      else Serial.println("irrigate should now be off");
-      Serial.println("irrigateOld:"+String(irrigateOld));
-      Serial.println("irrigate:"+String(irrigate));
-      break;
-    }
-    //Serial.println(String(millis()) + "/" +String(startMillis + delaylength *1000));
-  }
-  */
 }
 
 void sendLoraMsg(){
