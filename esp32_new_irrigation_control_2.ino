@@ -275,6 +275,12 @@ void sendLoraMsg(){
       sendMessage["total"] = String(totalMilliLitres / 1000);
       sendMessage["rssi"] = rssi;
       sendMessage["activeValve"] = activeValve;
+      JsonArray enabledValvesData = sendMessage.createNestedArray("enabledValves");
+      JsonArray irrigationLengthData = sendMessage.createNestedArray("irrigationLength");
+      for (int i = 0; i < numValves; i++) {
+        enabledValvesData.add(enabledValves[i]);
+        irrigationLengthData.add(irrigationLength[i]); 
+      }
       sendMessage["irrigate"] = irrigate;
       
       // Send Packet
