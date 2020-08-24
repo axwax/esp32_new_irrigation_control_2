@@ -25,10 +25,12 @@ SSD1306 display(0x3c, OLED_SDA, OLED_SCL);
 int rssi;
 bool loraSent = false;
 
+// All eight valve Pins: 25, 22, 12, 23 , 13, 2 , 21, 17
+
 // set up Relays
 int numValves = 6;
 int valve[] = {25,22,12,23,13,2};
-int enabledValves[] = {false,true,true,true,true,false};
+int enabledValves[] = {true,true,true,true,true,false};
 int irrigationLength[] = {120,120,120,120,60,120};
 
 int activeValve = 6;
