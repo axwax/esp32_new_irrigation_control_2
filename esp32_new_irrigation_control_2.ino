@@ -9,11 +9,11 @@ Chrono sendLora(Chrono::SECONDS);
 Chrono forwardIrrigation(Chrono::SECONDS);
 Chrono waterFlow(Chrono::SECONDS); 
 
-// set up OLED
-#define OLED_SDA    4
-#define OLED_SCL    15
-#define OLED_RST    16
-SSD1306 display(0x3c, OLED_SDA, OLED_SCL);
+// Display Variables
+String displaymessages[5] = {"","","","",""};
+
+// Display
+SSD1306 display(0x3c, 4, 15);
 
 // LoRa Pins
 #define SCK     5    // GPIO5  -- SX127x's SCK
@@ -101,7 +101,7 @@ void setup() {
 
   // ready to go
   Serial.println("ready");
-  displayMsg("ready");  
+  displaymessages[0] = "ready";  
 }
 
 void loop() {
@@ -131,14 +131,14 @@ void loop() {
         digitalWrite(valve[activeValve], HIGH);
         valveStateStr = "valve " + String(activeValve) + " (" + String(valve[activeValve]) + ") open";
         Serial.println(valveStateStr); 
-        displayMsg(valveStateStr);
+        displaymessages[0] = valveStateStr;
         sendLoraMsg();
         currentIrrigationLength = irrigationLength[activeValve];
       }
       else {
         valveStateStr = "valve " + String(activeValve) + " (" + String(valve[activeValve]) + ") disabled";
         Serial.println(valveStateStr); 
-        displayMsg(valveStateStr);
+        displaymessages[0] = valveStateStr;
         currentIrrigationLength = 0;
       }               
     }  
@@ -188,31 +188,44 @@ void loop() {
     if(irrigate) valveStateStr +="started";
     else valveStateStr +="stopped";
     Serial.println(valveStateStr);
-    displayMsg(valveStateStr+"!!!");
+    displaymessages[0] = valveStateStr+"!!!";
     if(!irrigate){sendLoraMsg();}
   }
+  statusDisplay();
   yield();
 }
 
 // Display Functions
-void initDisplay(){
-  // Configure OLED by setting the OLED Reset HIGH, LOW, and then back HIGH
-  pinMode(OLED_RST, OUTPUT);
-  digitalWrite(OLED_RST, HIGH);
-  delay(100);
-  digitalWrite(OLED_RST, LOW);
-  delay(100);
-  digitalWrite(OLED_RST, HIGH);
-    
-  display.init();
-  display.flipScreenVertically();
+void messageLog(const char *msg){
+     display.clear();
+     display.setTextAlignment(TEXT_ALIGN_LEFT);
+     display.setFont(ArialMT_Plain_10);
+     display.drawString(0, 0, msg);
+     display.display();
+}
+
+void statusDisplay(){
   display.clear();
-  display.setFont(ArialMT_Plain_16);
-  display.setColor(WHITE);
-  display.setTextAlignment(TEXT_ALIGN_CENTER);
-  display.drawString(display.getWidth() / 2, display.getHeight() / 2, "LoRa Receiver");
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.setFont(ArialMT_Plain_10);
+  for (int i = 0; i<=3; i++){
+    display.drawString(1 , 12*i , displaymessages[i]);
+  }
+  display.drawStringMaxWidth(0 , 48 , 128, displaymessages[4]);
   display.display();
-  delay(1000);
+}
+
+void initDisplay(){
+     pinMode(16,OUTPUT);
+     pinMode(25,OUTPUT);
+     digitalWrite(16, LOW);    // set GPIO16 low to reset OLED
+     delay(50); 
+     digitalWrite(16, HIGH); // while OLED is running, must set GPIO16 in high
+     display.init();
+     //display.flipScreenVertically();  
+     display.setFont(ArialMT_Plain_10);
+     delay(1500);
+     display.clear();
 }
 
 void displayMsg(String msg1, String msg2, String msg3, String msg4){
@@ -255,7 +268,9 @@ void checkWaterFlow(){
     
     // Print the flow rate for this second in litres / minute
     String waterFlowMsg = String(flowRate) + "L/min - " + String(totalMilliLitres) + "mL / " + String(totalMilliLitres / 1000) + "L";
-    displayMsg(waterFlowMsg, valveStateStr, "RSSI: "+String(rssi));
+    displaymessages[0] = valveStateStr;
+    displaymessages[1] = waterFlowMsg;
+    displaymessages[2] = "RSSI: "+String(rssi);
     Serial.println(waterFlowMsg);
     if(((flowRate >0 && flowRate != previousFlowRate) || (previousFlowRate > 0 && flowRate == 0)) && loraSent == false){
       // send lora
@@ -270,9 +285,9 @@ void initLora(){
   SPI.begin(SCK,MISO,MOSI,SS);
   LoRa.setPins(SS,RST,DI00);  
   while (!LoRa.begin(BAND)){
-    //messageLog("Initialising LoRa module....");
+    messageLog("Initialising LoRa module....");
   }
-  //messageLog("LoRa Init success!");
+  messageLog("LoRa Init success!");
   delay(1000);
   LoRa.onReceive(onReceive);
 }
