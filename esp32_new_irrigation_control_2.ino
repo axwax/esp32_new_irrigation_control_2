@@ -15,14 +15,24 @@ Chrono waterFlow(Chrono::SECONDS);
 #define OLED_RST    16
 SSD1306 display(0x3c, OLED_SDA, OLED_SCL);
 
-// set up LORA
-#define LORA_BAND    868
-#define SCK     5    // GPIO5  -- SX1278's SCK
-#define MISO    19   // GPIO19 -- SX1278's MISO
-#define MOSI    27   // GPIO27 -- SX1278's MOSI
-#define SS      18   // GPIO18 -- SX1278's CS
-#define RST     14   // GPIO14 -- SX1278's RESET
-#define DI0     26   // GPIO26 -- SX1278's IRQ(Interrupt Request)
+// LoRa Pins
+#define SCK     5    // GPIO5  -- SX127x's SCK
+#define MISO    19   // GPIO19 -- SX127x's MISO
+#define MOSI    27   // GPIO27 -- SX127x's MOSI
+#define SS      18   // GPIO18 -- SX127x's CS
+#define RST     14   // GPIO14 -- SX127x's RESET
+#define DI00    26   // GPIO26 -- SX127x's IRQ(Interrupt Request)
+#define BAND    868E6  //you can set band here directly,e.g. 868E6,915E6
+#define PABOOST true
+
+// LoRa Variables
+typedef struct {
+  byte src_addr;
+  char msg[255];
+  unsigned long count;
+ } _l_packet;
+_l_packet pkt;
+boolean gotpacket;
 int rssi;
 bool loraSent = false;
 
@@ -55,6 +65,8 @@ void initDisplay();
 void displayMsg(String msg1, String msg2 = "", String msg3 = "", String msg4 = "");
 void IRAM_ATTR pulseCounter();
 void checkWaterFlow();
+void initLora();
+void onReceive(int);
 void sendLoraMsg();
 
 
@@ -68,12 +80,10 @@ void setup() {
   initDisplay();
   
   // set up LORA
-  SPI.begin(SCK, MISO, MOSI, SS);
-  LoRa.setPins(SS, RST, DI0);
-  if (!LoRa.begin(LORA_BAND * 1E6)) {
-    Serial.println("Starting LoRa failed!");
-    while (1);
-  }
+  gotpacket = false;
+  pkt.src_addr = 0;
+  pkt.count = 0;
+  initLora(); 
 
   // set up flow sensor
   pinMode(FLOWSENSOR, INPUT_PULLUP);
@@ -135,30 +145,21 @@ void loop() {
   }
      
   // try to parse LoRa packet
-  int packetSize = LoRa.parsePacket();
-  if (packetSize) {
+  if (gotpacket){
+    gotpacket = false;    
     // received a packet
     Serial.println("packet:");
-    Serial.println(packetSize);
+    //Serial.println(pkt.msg);
 
     String packet = "";
     String logMsg = "";
     
     // set up json
-    char json[500];
-    json[0] = '\0';
-
-        
-    for (int i = 0; i < packetSize; i++) {
-      packet += (char)LoRa.read();
-      byte hi = strlen(json);
-      json[hi] = (char)LoRa.read();
-      json[hi + 1] = '\0';      
-    }
+    packet = pkt.msg;
     Serial.println(packet);
       
     DynamicJsonDocument recMessage(1024);
-    DeserializationError error = deserializeJson(recMessage, json);
+    DeserializationError error = deserializeJson(recMessage, packet);
     if (error) {
       Serial.println("error:");
       Serial.println(error.c_str());
@@ -265,6 +266,24 @@ void checkWaterFlow(){
 }
 
 // LoRa Functions
+void initLora(){
+  SPI.begin(SCK,MISO,MOSI,SS);
+  LoRa.setPins(SS,RST,DI00);  
+  while (!LoRa.begin(BAND)){
+    //messageLog("Initialising LoRa module....");
+  }
+  //messageLog("LoRa Init success!");
+  delay(1000);
+  LoRa.onReceive(onReceive);
+}
+void onReceive(int packetSize){
+  Serial.println("packet!!!!");
+  LoRa.readBytes((uint8_t *)&pkt,packetSize); 
+  gotpacket = true;
+  pkt.msg[packetSize-1]='\0';
+  pkt.count++;
+  rssi = LoRa.packetRssi(); 
+}
 void sendLoraMsg(){
     // send lora
     DynamicJsonDocument sendMessage(1024);
