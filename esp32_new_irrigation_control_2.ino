@@ -196,14 +196,6 @@ void loop() {
 }
 
 // Display Functions
-void messageLog(const char *msg){
-     display.clear();
-     display.setTextAlignment(TEXT_ALIGN_LEFT);
-     display.setFont(ArialMT_Plain_10);
-     display.drawString(0, 0, msg);
-     display.display();
-}
-
 void statusDisplay(){
   display.clear();
   display.setTextAlignment(TEXT_ALIGN_LEFT);
@@ -214,7 +206,6 @@ void statusDisplay(){
   display.drawStringMaxWidth(0 , 48 , 128, displaymessages[4]);
   display.display();
 }
-
 void initDisplay(){
      pinMode(16,OUTPUT);
      pinMode(25,OUTPUT);
@@ -226,19 +217,6 @@ void initDisplay(){
      display.setFont(ArialMT_Plain_10);
      delay(1500);
      display.clear();
-}
-
-void displayMsg(String msg1, String msg2, String msg3, String msg4){
-  digitalWrite(LED_BUILTIN, LOW);
-  display.clear();
-  display.setTextAlignment(TEXT_ALIGN_LEFT);
-  display.setFont(ArialMT_Plain_10);
-  
-  display.drawString(0, 25, String(msg1).c_str());
-  display.drawString(0, 35, String(msg2).c_str());
-  display.drawString(0, 45, String(msg3).c_str());
-  display.drawString(0, 55, String(msg4).c_str());
-  display.display();
 }
 
 // Water Flow Meter Functions
@@ -283,11 +261,12 @@ void checkWaterFlow(){
 // LoRa Functions
 void initLora(){
   SPI.begin(SCK,MISO,MOSI,SS);
-  LoRa.setPins(SS,RST,DI00);  
+  LoRa.setPins(SS,RST,DI00);
+  displaymessages[0] = "Initialising LoRa module....";
   while (!LoRa.begin(BAND)){
-    messageLog("Initialising LoRa module....");
   }
-  messageLog("LoRa Init success!");
+  displaymessages[0] = "LoRa Init success!";
+  statusDisplay(); 
   delay(1000);
   LoRa.onReceive(onReceive);
 }
