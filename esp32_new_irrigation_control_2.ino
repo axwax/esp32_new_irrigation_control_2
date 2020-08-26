@@ -3,10 +3,11 @@
 #include <LoRa.h>
 #include <ArduinoJson.h>
 #include  <Chrono.h>
-//Metro sendLora = Metro(10000);
+
+// set up Chrono
 Chrono sendLora(Chrono::SECONDS); 
 Chrono forwardIrrigation(Chrono::SECONDS);
-
+Chrono waterFlow(Chrono::SECONDS); 
 
 // set up OLED
 #define OLED_SDA    4
@@ -32,7 +33,6 @@ int numValves = 6;
 int valve[] = {25,22,12,23,13,2};
 int enabledValves[] = {true,true,true,true,true,false};
 int irrigationLength[] = {120,120,120,120,60,120};
-
 int activeValve = 6;
 bool irrigate = true;
 bool irrigateOld = false;
@@ -41,7 +41,6 @@ String valveStateStr;
 
 // set up Water Flow Sensor
 #define FLOWSENSOR  36
-Chrono waterFlow(Chrono::SECONDS); 
 float calibrationFactor = 7.31;
 volatile byte pulseCount;
 byte pulse1Sec = 0;
@@ -102,13 +101,12 @@ void loop() {
     waterFlow.restart(); 
     checkWaterFlow();
   }
-
   if (sendLora.hasPassed(10)) {  
     sendLora.restart();   
     loraSent = false;
   }
 
-
+  // Irrigation is ON - cycle through enabledValves and switch at intervals set in irrigationLength
   if(irrigate){
     if(forwardIrrigation.hasPassed(currentIrrigationLength)){
       forwardIrrigation.restart();
@@ -136,9 +134,7 @@ void loop() {
     }  
   }
      
-
-  
-  // try to parse packet
+  // try to parse LoRa packet
   int packetSize = LoRa.parsePacket();
   if (packetSize) {
     // received a packet
@@ -182,6 +178,8 @@ void loop() {
     rssi = LoRa.packetRssi();
     Serial.println(rssi);
   }
+
+  // send LoRa message when irrigation is stopped
   if(irrigate != irrigateOld){
     Serial.println("irrigatechange");      
     irrigateOld = irrigate;
@@ -195,7 +193,8 @@ void loop() {
   yield();
 }
 
-void initDisplay() {
+// Display Functions
+void initDisplay(){
   // Configure OLED by setting the OLED Reset HIGH, LOW, and then back HIGH
   pinMode(OLED_RST, OUTPUT);
   digitalWrite(OLED_RST, HIGH);
@@ -215,7 +214,7 @@ void initDisplay() {
   delay(1000);
 }
 
-void displayMsg(String msg1, String msg2, String msg3, String msg4) {
+void displayMsg(String msg1, String msg2, String msg3, String msg4){
   digitalWrite(LED_BUILTIN, LOW);
   display.clear();
   display.setTextAlignment(TEXT_ALIGN_LEFT);
@@ -226,14 +225,12 @@ void displayMsg(String msg1, String msg2, String msg3, String msg4) {
   display.drawString(0, 45, String(msg3).c_str());
   display.drawString(0, 55, String(msg4).c_str());
   display.display();
-  //delay(1000);
 }
 
-void IRAM_ATTR pulseCounter()
-{
+// Water Flow Meter Functions
+void IRAM_ATTR pulseCounter(){
   pulseCount++;
 }
-
 void checkWaterFlow(){
     
     pulse1Sec = pulseCount;
@@ -259,38 +256,38 @@ void checkWaterFlow(){
     String waterFlowMsg = String(flowRate) + "L/min - " + String(totalMilliLitres) + "mL / " + String(totalMilliLitres / 1000) + "L";
     displayMsg(waterFlowMsg, valveStateStr, "RSSI: "+String(rssi));
     Serial.println(waterFlowMsg);
-    //if(((previousFlowRate == 0 && flowRate >0) || (previousFlowRate > 0 && flowRate == 0)) && loraSent == false){
     if(((flowRate >0 && flowRate != previousFlowRate) || (previousFlowRate > 0 && flowRate == 0)) && loraSent == false){
-        // send lora
+      // send lora
       sendLoraMsg();
       Serial.println("flow:"+String(flowRate));
       previousFlowRate = flowRate;
   }
 }
 
+// LoRa Functions
 void sendLoraMsg(){
-      // send lora
-      DynamicJsonDocument sendMessage(1024);
-      sendMessage["rate"] = String(flowRate);
-      sendMessage["total"] = String(totalMilliLitres / 1000);
-      sendMessage["rssi"] = rssi;
-      sendMessage["activeValve"] = activeValve;
-      JsonArray enabledValvesData = sendMessage.createNestedArray("enabledValves");
-      JsonArray irrigationLengthData = sendMessage.createNestedArray("irrigationLength");
-      for (int i = 0; i < numValves; i++) {
-        enabledValvesData.add(enabledValves[i]);
-        irrigationLengthData.add(irrigationLength[i]); 
-      }
-      sendMessage["irrigate"] = irrigate;
-      
-      // Send Packet
-      String sMessage;
-      serializeJson(sendMessage, sMessage);
-      LoRa.setTxPower(7);
-      LoRa.beginPacket();
-      LoRa.print(sMessage);
-      LoRa.endPacket();
-      Serial.println("Lora Sent");
-      Serial.println(sMessage);
-      loraSent = true;
+    // send lora
+    DynamicJsonDocument sendMessage(1024);
+    sendMessage["rate"] = String(flowRate);
+    sendMessage["total"] = String(totalMilliLitres / 1000);
+    sendMessage["rssi"] = rssi;
+    sendMessage["activeValve"] = activeValve;
+    JsonArray enabledValvesData = sendMessage.createNestedArray("enabledValves");
+    JsonArray irrigationLengthData = sendMessage.createNestedArray("irrigationLength");
+    for (int i = 0; i < numValves; i++) {
+      enabledValvesData.add(enabledValves[i]);
+      irrigationLengthData.add(irrigationLength[i]); 
+    }
+    sendMessage["irrigate"] = irrigate;
+    
+    // Send Packet
+    String sMessage;
+    serializeJson(sendMessage, sMessage);
+    LoRa.setTxPower(7);
+    LoRa.beginPacket();
+    LoRa.print(sMessage);
+    LoRa.endPacket();
+    Serial.println("Lora Sent");
+    Serial.println(sMessage);
+    loraSent = true;
 }
