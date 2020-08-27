@@ -83,7 +83,8 @@ void setup() {
   gotpacket = false;
   pkt.src_addr = 0;
   pkt.count = 0;
-  initLora(); 
+  initLora();
+  LoRa.receive();
 
   // set up flow sensor
   pinMode(FLOWSENSOR, INPUT_PULLUP);
@@ -155,7 +156,7 @@ void loop() {
     String logMsg = "";
     
     // set up json
-    packet = pkt.msg;
+    packet = "{" + String(pkt.msg);
     Serial.println(packet);
       
     DynamicJsonDocument recMessage(1024);
@@ -167,9 +168,7 @@ void loop() {
     }
     
     serializeJson(recMessage, Serial);
-    if(recMessage["irrigate"]){
-      irrigate = (bool) recMessage["irrigate"];
-    }
+    irrigate = (bool) recMessage["irrigate"];
     
     if(recMessage["enabledValves"]){
       //enabledValves = recMessage["enabledValves"];
@@ -271,7 +270,6 @@ void initLora(){
   LoRa.onReceive(onReceive);
 }
 void onReceive(int packetSize){
-  Serial.println("packet!!!!");
   LoRa.readBytes((uint8_t *)&pkt,packetSize); 
   gotpacket = true;
   pkt.msg[packetSize-1]='\0';
@@ -303,4 +301,6 @@ void sendLoraMsg(){
     Serial.println("Lora Sent");
     Serial.println(sMessage);
     loraSent = true;
+    LoRa.receive();
+
 }
