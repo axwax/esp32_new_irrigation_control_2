@@ -44,6 +44,7 @@ int valve[] = {25,22,12,23,13,2};
 int enabledValves[] = {true,true,true,true,true,false};
 int irrigationLength[] = {120,120,120,120,60,120};
 int activeValve = 6;
+bool nextValve = false;
 bool irrigate = true;
 bool irrigateOld = false;
 int currentIrrigationLength = 0;
@@ -119,6 +120,10 @@ void loop() {
 
   // Irrigation is ON - cycle through enabledValves and switch at intervals set in irrigationLength
   if(irrigate){
+    if(nextValve){
+      currentIrrigationLength = 0;
+      nextValve = false;
+    }
     if(forwardIrrigation.hasPassed(currentIrrigationLength)){
       forwardIrrigation.restart();
       valveStateStr = "valve " + String(activeValve) + " (" + String(valve[activeValve]) + ") closed";       
@@ -169,6 +174,7 @@ void loop() {
     
     serializeJson(recMessage, Serial);
     irrigate = (bool) recMessage["irrigate"];
+    nextValve = (bool) recMessage["nextValve"];
     
     if(recMessage["enabledValves"]){
       //enabledValves = recMessage["enabledValves"];
