@@ -41,8 +41,10 @@ bool loraSent = false;
 // set up Relays
 int numValves = 6;
 int valve[] = {25,22,12,23,13,2};
-int enabledValves[] = {true,true,true,true,true,false};
-int irrigationLength[] = {120,120,120,120,60,120};
+//int enabledValves[] = {true,true,true,true,true,false};
+//int irrigationLength[] = {120,120,120,120,60,120};
+int enabledValves[] = {false,true,true,false,true,false};
+int irrigationLength[] = {120,120,120,120,120,120};
 int activeValve = 4;
 bool nextValve = false;
 bool irrigate = true;
