@@ -121,6 +121,7 @@ void loop() {
   // Irrigation is ON - cycle through enabledValves and switch at intervals set in irrigationLength
   if(irrigate){
     if(nextValve){
+      Serial.println("nextValve");
       currentIrrigationLength = 0;
       nextValve = false;
     }
@@ -190,8 +191,18 @@ void loop() {
     Serial.println("irrigatechange");      
     irrigateOld = irrigate;
     valveStateStr = "irrigation ";
-    if(irrigate) valveStateStr +="started";
-    else valveStateStr +="stopped";
+    if(irrigate){
+      valveStateStr +="started";
+      nextValve = true;
+    }
+    else{
+      valveStateStr +="stopped";
+      valveStateStr = "valve " + String(activeValve) + " (" + String(valve[activeValve]) + ") closed";       
+      Serial.println(valveStateStr); 
+      digitalWrite(valve[activeValve], LOW);      
+      activeValve--;
+      if(activeValve<0) activeValve = 4;
+    }
     Serial.println(valveStateStr);
     displaymessages[0] = valveStateStr+"!!!";
     if(!irrigate){sendLoraMsg();}
