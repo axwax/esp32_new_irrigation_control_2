@@ -52,7 +52,7 @@ String valveStateStr;
 
 // set up Water Flow Sensor
 #define FLOWSENSOR  36
-float calibrationFactor = 7.31;
+float calibrationFactor = 7.34;
 volatile byte pulseCount;
 byte pulse1Sec = 0;
 float flowRate;
