@@ -47,7 +47,7 @@ int enabledValves[] = {false,true,true,false,true,false};
 int irrigationLength[] = {120,120,120,120,120,120};
 int activeValve = 4;
 bool nextValve = false;
-bool irrigate = true;
+bool irrigate = false;
 bool irrigateOld = false;
 int currentIrrigationLength = 0;
 String valveStateStr;
@@ -105,7 +105,10 @@ void setup() {
 
   // ready to go
   Serial.println("ready");
-  displaymessages[0] = "ready";  
+  displaymessages[0] = "ready";
+  
+  // send initial lora message
+  sendLoraMsg();  
 }
 
 void loop() {
