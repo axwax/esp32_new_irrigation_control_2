@@ -63,6 +63,10 @@ unsigned int flowMilliLitres;
 unsigned long totalMilliLitres;
 long previousMillis = 0;
 
+// set up button
+#define BUTTONPIN 0
+bool buttonPressed = false;
+
 // Forward declarations
 void initDisplay();
 void displayMsg(String msg1, String msg2 = "", String msg3 = "", String msg4 = "");
@@ -103,6 +107,9 @@ void setup() {
     pinMode(valve[i], OUTPUT);
   }
 
+  // initialize the pushbutton pin as an input:
+  pinMode(BUTTONPIN, INPUT);
+  
   // ready to go
   Serial.println("ready");
   displaymessages[0] = "ready";
@@ -112,6 +119,18 @@ void setup() {
 }
 
 void loop() {
+
+  // handle button press
+  if(digitalRead(BUTTONPIN) == false && buttonPressed == false) {
+    irrigate = !irrigate;
+    if(irrigate) nextValve = true;
+    buttonPressed = true;
+    delay(200);
+  }
+  else if(digitalRead(BUTTONPIN) == true && buttonPressed == true) {
+    buttonPressed = false;
+    delay(200);
+  }
 
   // check for Chrono intervals
   if (waterFlow.hasPassed(1)) {
@@ -234,7 +253,7 @@ void initDisplay(){
      delay(50); 
      digitalWrite(16, HIGH); // while OLED is running, must set GPIO16 in high
      display.init();
-     //display.flipScreenVertically();  
+     display.flipScreenVertically();  
      display.setFont(ArialMT_Plain_10);
      delay(1500);
      display.clear();
