@@ -202,7 +202,13 @@ void loop() {
     nextValve = (bool) recMessage["nextValve"];
     
     if(recMessage["enabledValves"]){
-      //enabledValves = recMessage["enabledValves"];
+      int i=0;
+      JsonArray array = recMessage["enabledValves"].as<JsonArray>();
+      for(JsonVariant v : array) {
+          enabledValves[i] = v.as<bool>();
+          i++;
+          if(i>numValves)Serial.println("ERROR - Too many Valves!!!");
+      }      
     }
     // print RSSI of packet
     Serial.print("' with RSSI ");
