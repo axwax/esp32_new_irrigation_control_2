@@ -36,14 +36,13 @@ boolean gotpacket;
 int rssi;
 bool loraSent = false;
 
-// All eight valve Pins: 25, 22, 12, 23 , 13, 2 , 21, 17
+// All eight valve Pins: 22, 25, 23 , 17, 13, 21 , 2, 17
 
 // set up Relays
 int numValves = 6;
-int valve[] = {25,22,12,23,13,2};
-//int enabledValves[] = {true,true,true,true,true,false};
-//int irrigationLength[] = {120,120,120,120,60,120};
-int enabledValves[] = {false,true,true,false,true,false};
+int valve[] = {22,25,23,17,13,21}; // back to 6 pins
+
+int enabledValves[] = {true,true,true,true,false,false};
 int irrigationLength[] = {120,120,120,120,120,120};
 int activeValve = numValves -2; // this is a hack to make the first button press work as expected. TODO
 bool nextValve = false;
@@ -78,10 +77,18 @@ void sendLoraMsg();
 
 
 void setup() {
+
   Serial.begin(115200);
   while (!Serial);
-
   Serial.println("LoRa Receiver");
+      
+  // set up relays
+  for (int i = 0; i < numValves; i++){
+    pinMode(valve[i], OUTPUT);
+    digitalWrite(valve[i], HIGH);
+    Serial.print(i);
+  }
+  Serial.println("pins set high");
 
   // set up the display
   initDisplay();
@@ -102,10 +109,7 @@ void setup() {
   previousMillis = 0;
   attachInterrupt(digitalPinToInterrupt(FLOWSENSOR), pulseCounter, FALLING);
 
-  // set up relays
-  for (int i = 0; i < numValves; i++){
-    pinMode(valve[i], OUTPUT);
-  }
+
 
   // initialize the pushbutton pin as an input:
   pinMode(BUTTONPIN, INPUT);
@@ -122,8 +126,10 @@ void loop() {
 
   // handle button press
   if(digitalRead(BUTTONPIN) == false && buttonPressed == false) {
+    Serial.println("button pressed");
     irrigate = !irrigate;
     if(irrigate) nextValve = true;
+    //if(irrigate) currentIrrigationLength = 0;
     buttonPressed = true;
     delay(200);
   }
@@ -146,6 +152,8 @@ void loop() {
   if(irrigate){
     if(nextValve){
       Serial.println("nextValve");
+      Serial.print("current Valve is ");
+      Serial.println(activeValve);
       currentIrrigationLength = 0;
       nextValve = false;
     }
@@ -153,13 +161,13 @@ void loop() {
       forwardIrrigation.restart();
       valveStateStr = "valve " + String(activeValve) + " (" + String(valve[activeValve]) + ") closed";       
       Serial.println(valveStateStr); 
-      digitalWrite(valve[activeValve], LOW);
+      digitalWrite(valve[activeValve], HIGH); // disable current valve
       activeValve++;
       if(activeValve>=numValves){
         activeValve = 0;
       }       
       if(enabledValves[activeValve]){
-        digitalWrite(valve[activeValve], HIGH);
+        digitalWrite(valve[activeValve], LOW);  // enable current valve
         valveStateStr = "valve " + String(activeValve) + " (" + String(valve[activeValve]) + ") open";
         Serial.println(valveStateStr); 
         displaymessages[0] = valveStateStr;
@@ -229,7 +237,7 @@ void loop() {
       valveStateStr +="stopped";
       valveStateStr = "valve " + String(activeValve) + " (" + String(valve[activeValve]) + ") closed";       
       Serial.println(valveStateStr); 
-      digitalWrite(valve[activeValve], LOW);      
+      digitalWrite(valve[activeValve], HIGH); // disable current valve     
       activeValve--;
       if(activeValve<0) activeValve = numValves-1;
     }
