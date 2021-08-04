@@ -45,7 +45,7 @@ int valve[] = {25,22,12,23,13,2};
 //int irrigationLength[] = {120,120,120,120,60,120};
 int enabledValves[] = {false,true,true,false,true,false};
 int irrigationLength[] = {120,120,120,120,120,120};
-int activeValve = 4;
+int activeValve = numValves -1;
 bool nextValve = false;
 bool irrigate = false;
 bool irrigateOld = false;
@@ -231,7 +231,7 @@ void loop() {
       Serial.println(valveStateStr); 
       digitalWrite(valve[activeValve], LOW);      
       activeValve--;
-      if(activeValve<0) activeValve = 4;
+      if(activeValve<0) activeValve = numValves-1;
     }
     Serial.println(valveStateStr);
     displaymessages[0] = valveStateStr+"!!!";
